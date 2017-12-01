@@ -13,7 +13,7 @@ BBTOOLS="shifter --image registry.services.nersc.gov/jgi/bbtools:latest"
 SAMTOOLS="shifter --image mjblow/samtools:1.5"
 MINIMAP2="shifter --image mjblow/minimap2:2.3-r531"
 HTSBOX="shifter --image mjblow/htsbox:r312"
-BEDTOOLS="rmonti/bedtools:latest"
+BEDTOOLS="shifter --image mjblow/bedtools:2.25.0"
 
 mkdir -p $SCRATCH/Long_Read_RNA/${PROJECT}/${NAME}
 cd $SCRATCH/Long_Read_RNA/${PROJECT}/${NAME}
@@ -53,7 +53,7 @@ ${HTSBOX} htsbox pileup -s 5 -q10 -vcf ${GENOME} ${NAME}.minimap2.bam > ${NAME}.
 perl ${SCRIPTS}/filter_variants.pl ${NAME}.minimap2.vcf  > ${NAME}.filtered_variants.vcf
 
 #Intersect with gene annotations
-bedtools intersect -wb -a ${NAME}.filtered_variants.vcf -b ${GXGFF} | grep exon | cut -f 1-11,18,20 |  uniq > ${NAME}.filtered_variants.annotated.vcf
+${BEDTOOLS} intersectiBed -wb -a ${NAME}.filtered_variants.vcf -b ${GXGFF} | grep exon | cut -f 1-11,18,20 |  uniq > ${NAME}.filtered_variants.annotated.vcf
 
 #Reorient variants with respect to transcribed strand
 perl ${SCRIPTS}/fix_strandedness.pl ${NAME}.filtered_variants.annotated.vcf > ${NAME}.filtered_variants.annotated.vcf.stranded.txt
@@ -62,7 +62,7 @@ perl ${SCRIPTS}/fix_strandedness.pl ${NAME}.filtered_variants.annotated.vcf > ${
 awk '{print $1"\t"$2-3"\t"$3+3"\t"$4"\t"$5"\t"$6}' ${NAME}.filtered_variants.annotated.vcf.stranded.txt > ${NAME}.filtered_variants.local_context.bed
 
 #Get flanking sequence contexts
-bedtools getfasta -fi ${GENOME} -bed ${NAME}.filtered_variants.local_context.bed -s -tab -fo ${NAME}.filtered_variants.local_context.seq
+${BEDTOOLS} fastaFromBed -fi ${GENOME} -bed ${NAME}.filtered_variants.local_context.bed -s -tab -fo ${NAME}.filtered_variants.local_context.seq
 
 #Reannotate variant files with flanking sequence contexts
 perl ${SCRIPTS}/add_seq_context.pl ${NAME}.filtered_variants.annotated.vcf.stranded.txt ${NAME}.filtered_variants.local_context.seq > ${NAME}.filtered_variants.annotated.vcf.stranded.seq.txt

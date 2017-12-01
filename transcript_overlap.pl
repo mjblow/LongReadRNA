@@ -9,7 +9,7 @@ my $genes_bed = $ARGV[0];
 my $reads_bam = $ARGV[1];
 
 my %transcript_stats;
-open(my $overlap_fh, "intersectBed -a $genes_bed -b $reads_bam -split -wao |");
+open(my $overlap_fh, "shifter --image mjblow/bedtools:2.25.0 intersectBed -a $genes_bed -b $reads_bam -split -wao |");
 while(<$overlap_fh>){
 	$_ =~ s/\n//;
 	#bed12
