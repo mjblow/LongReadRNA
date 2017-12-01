@@ -4,9 +4,10 @@ NAME=$2 #e.g. ONT_RNA_X0143_ALB2-1
 GENOME=$3 #e.g. "/global/projectb/scratch/mjblow/ONT_RNA/Arabidopsis_SeqTech_USA-70/REF.fa"
 GENEFASTA=$4 #e.g. "/global/projectb/scratch/mjblow/ONT_RNA/Arabidopsis_SeqTech_USA-70/Athaliana_167_TAIR10.cds_primaryTranscriptOnly.fa"
 GXGFF=$5 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.gff3"
-GXBED=$6 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.bed"
-PASS=$7 # e.g. /global/dna/projectdirs/RD/Adv-Seq/www/OxfordNanoPore-AnalysisReports/X0123/data/nanopore02_jgi_psf_org_20170608_FNFAH04643_MN18617_sequencing_run_170608_1002001975_001-combined.pass-1D.fastq.gz
-FAIL=$8
+GXGTF=$6 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.gff3"
+GXBED=$7 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.bed"
+PASS=$8 # e.g. /global/dna/projectdirs/RD/Adv-Seq/www/OxfordNanoPore-AnalysisReports/X0123/data/nanopore02_jgi_psf_org_20170608_FNFAH04643_MN18617_sequencing_run_170608_1002001975_001-combined.pass-1D.fastq.gz
+FAIL=$9
 
 SCRIPTS="/global/u2/m/mjblow/user_support_projects/Long_Read_RNA/scripts"
 BBTOOLS="shifter --image registry.services.nersc.gov/jgi/bbtools:latest"
@@ -38,6 +39,9 @@ ${MINIMAP2} minimap2 -x splice -a -t 32 ${GENOME} ${NAME}.fastq > ${NAME}.minima
 ${SAMTOOLS} samtools view -bhS ${NAME}.minimap2.sam | ${SAMTOOLS} samtools sort - -o ${NAME}.minimap2.bam
 ${SAMTOOLS} samtools index ${NAME}.minimap2.bam
 
+#Mapping stats
+${SCRIPTS}/k8 ${SCRIPTS}/mapstats.js ${NAME}.minimap2.sam > ${NAME}.mapstats.txt
+
 #Intersect with gene annotations
 perl ${SCRIPTS}/transcript_overlap.pl ${GXBED} ${NAME}.minimap2.bam > ${NAME}.tx_overlap.txt
 
@@ -46,6 +50,9 @@ perl ${SCRIPTS}/first_to_last_exon_reads.pl ${NAME}.tx_overlap.txt > ${NAME}.exo
 
 #summarzie >90% tx coverage by tx_length
 perl ${SCRIPTS}/full_transcript_reads.pl ${NAME}.tx_overlap.txt 500 10000 > ${NAME}.tx_cov.txt
+
+#compare with annotated introns
+${SCRIPTS}/k8 ${SCRIPTS}/intron-eval.js ${GXGTF} ${NAME}.minimap2.sam > ${NAME}.intron_eval.txt
 
 #run variant detection analysis
 ${HTSBOX} htsbox pileup -s 5 -q10 -vcf ${GENOME} ${NAME}.minimap2.bam > ${NAME}.minimap2.vcf
