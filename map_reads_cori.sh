@@ -45,7 +45,7 @@ perl ${SCRIPTS}/transcript_overlap.pl ${GXBED} ${NAME}.minimap2.bam > ${NAME}.tx
 perl ${SCRIPTS}/first_to_last_exon_reads.pl ${NAME}.tx_overlap.txt > ${NAME}.exon_cov.txt
 
 #summarzie >90% tx coverage by tx_length
-perl ${SCRIPTS}/full_transcript_reads.pl ${NAME}.tx_overlap.txt > ${NAME}.tx_cov.txt
+perl ${SCRIPTS}/full_transcript_reads.pl ${NAME}.tx_overlap.txt 500 10000 > ${NAME}.tx_cov.txt
 
 #run variant detection analysis
 ${HTSBOX} htsbox pileup -s 5 -q10 -vcf ${GENOME} ${NAME}.minimap2.bam > ${NAME}.minimap2.vcf
