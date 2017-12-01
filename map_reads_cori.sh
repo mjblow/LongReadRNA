@@ -11,7 +11,7 @@ FAIL=$8
 SCRIPTS="/global/u2/m/mjblow/user_support_projects/Long_Read_RNA/scripts"
 BBTOOLS="shifter --image registry.services.nersc.gov/jgi/bbtools:latest"
 SAMTOOLS="shifter --image mjblow/samtools:1.5"
-MINIMAP2="shifter --image mjblow/minimap2:2.3-r531"
+MINIMAP2="shifter --image mjblow/minimap2:2.5-r572"
 HTSBOX="shifter --image mjblow/htsbox:r312"
 BEDTOOLS="shifter --image mjblow/bedtools:2.25.0"
 
@@ -22,16 +22,17 @@ cd $SCRATCH/Long_Read_RNA/${PROJECT}/${NAME}
 ln -s ${GENOME} . 
 
 #link ONT RNA data, Convert U to T (required by mappers)
+#Not necessary for latest minimap2
 zcat ${PASS} ${FAIL} > ${NAME}.fastq
-${BBTOOLS} reformat.sh in=${NAME}.fastq out=${NAME}.fasta overwrite=true
-sed 's/U/T/g' ${NAME}.fasta > ${NAME}.T.fasta
+#${BBTOOLS} reformat.sh in=${NAME}.fastq out=${NAME}.fasta overwrite=true
+#sed 's/U/T/g' ${NAME}.fasta > ${NAME}.T.fasta
 
 #get readlength distributions of inputs
 ${BBTOOLS} readlength.sh in=${GENEFASTA} bin=100 max=50000 nzo=f out=PrimaryTranscripts.readlength.txt
-${BBTOOLS} readlength.sh bin=100 nzo=f max=50000 in=${NAME}.T.fasta out=${NAME}.T.readlength.txt
+${BBTOOLS} readlength.sh bin=100 nzo=f max=50000 in=${NAME}.fastq out=${NAME}.readlength.txt
 
 #map reads using minimap2
-${MINIMAP2} minimap2 -x splice -a -t 32 ${GENOME} ${NAME}.T.fasta > ${NAME}.minimap2.sam
+${MINIMAP2} minimap2 -x splice -a -t 32 ${GENOME} ${NAME}.fastq > ${NAME}.minimap2.sam
 
 #Convert to bam and index
 ${SAMTOOLS} samtools view -bhS ${NAME}.minimap2.sam | ${SAMTOOLS} samtools sort - -o ${NAME}.minimap2.bam
@@ -53,7 +54,7 @@ ${HTSBOX} htsbox pileup -s 5 -q10 -vcf ${GENOME} ${NAME}.minimap2.bam > ${NAME}.
 perl ${SCRIPTS}/filter_variants.pl ${NAME}.minimap2.vcf  > ${NAME}.filtered_variants.vcf
 
 #Intersect with gene annotations
-${BEDTOOLS} intersectiBed -wb -a ${NAME}.filtered_variants.vcf -b ${GXGFF} | grep exon | cut -f 1-11,18,20 |  uniq > ${NAME}.filtered_variants.annotated.vcf
+${BEDTOOLS} intersectBed -wb -a ${NAME}.filtered_variants.vcf -b ${GXGFF} | grep exon | cut -f 1-11,18,20 |  uniq > ${NAME}.filtered_variants.annotated.vcf
 
 #Reorient variants with respect to transcribed strand
 perl ${SCRIPTS}/fix_strandedness.pl ${NAME}.filtered_variants.annotated.vcf > ${NAME}.filtered_variants.annotated.vcf.stranded.txt
