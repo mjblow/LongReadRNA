@@ -4,18 +4,19 @@ NAME=$2 #e.g. ONT_RNA_X0143_ALB2-1
 GENOME=$3 #e.g. "/global/projectb/scratch/mjblow/ONT_RNA/Arabidopsis_SeqTech_USA-70/REF.fa"
 GENEFASTA=$4 #e.g. "/global/projectb/scratch/mjblow/ONT_RNA/Arabidopsis_SeqTech_USA-70/Athaliana_167_TAIR10.cds_primaryTranscriptOnly.fa"
 GXGFF=$5 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.gff3"
-PASS=$6 # e.g. /global/dna/projectdirs/RD/Adv-Seq/www/OxfordNanoPore-AnalysisReports/X0123/data/nanopore02_jgi_psf_org_20170608_FNFAH04643_MN18617_sequencing_run_170608_1002001975_001-combined.pass-1D.fastq.gz
-FAIL=$7
+GXBED=$6 # e.g."~/user_support_projects/ONT_RNA/Arabidopsis_lyrata_SeqTech_USA-79/Alyrata_384_v2.1.gene_exons.sorted.bed"
+PASS=$7 # e.g. /global/dna/projectdirs/RD/Adv-Seq/www/OxfordNanoPore-AnalysisReports/X0123/data/nanopore02_jgi_psf_org_20170608_FNFAH04643_MN18617_sequencing_run_170608_1002001975_001-combined.pass-1D.fastq.gz
+FAIL=$8
 
-SCRIPTS="/global/homes/m/mjblow/user_support_projects/ONT_RNA/scripts"
+SCRIPTS="/global/u2/m/mjblow/user_support_projects/Long_Read_RNA/scripts"
 BBTOOLS="shifter --image registry.services.nersc.gov/jgi/bbtools:latest"
 SAMTOOLS="shifter --image mjblow/samtools:1.5"
 MINIMAP2="shifter --image mjblow/minimap2:2.3-r531"
 HTSBOX="shifter --image mjblow/htsbox:r312"
 BEDTOOLS="rmonti/bedtools:latest"
 
-mkdir -p $SCRATCH/ONT_RNA/${PROJECT}/${NAME}
-cd $SCRATCH/ONT_RNA/${PROJECT}/${NAME}
+mkdir -p $SCRATCH/Long_Read_RNA/${PROJECT}/${NAME}
+cd $SCRATCH/Long_Read_RNA/${PROJECT}/${NAME}
 
 #link to reference genome
 ln -s ${GENOME} . 
@@ -37,7 +38,7 @@ ${SAMTOOLS} samtools view -bhS ${NAME}.minimap2.sam | ${SAMTOOLS} samtools sort 
 ${SAMTOOLS} samtools index ${NAME}.minimap2.bam
 
 #Intersect with gene annotations
-perl ${SCRIPTS}/transcript_overlap.pl ${GENESBED} ${NAME}.minimap2.bam > ${NAME}.tx_overlap.txt
+perl ${SCRIPTS}/transcript_overlap.pl ${GXBED} ${NAME}.minimap2.bam > ${NAME}.tx_overlap.txt
 
 #Summarize first-to-last-exon reads by tx exon count
 perl ${SCRIPTS}/first_to_last_exon_reads.pl ${NAME}.tx_overlap.txt > ${NAME}.exon_cov.txt
